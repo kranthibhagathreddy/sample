@@ -1,0 +1,642 @@
+<style>
+    .tooltip1,
+    .axis text {
+        font-family: Arial !important;
+    }
+    
+    .prospark_users_box {
+        background: #fff;
+        padding: 5px 0;
+        border-radius: 0 0 4px 4px;
+        border-top-left-radius: 0px;
+        border-top-right-radius: 0px;
+        border-width: 0 0 3px;
+        border-top-width: 0px;
+        display: block;
+        height: 100%;
+        overflow: hidden;
+        animation-duration: 1s;
+        animation-name: fadeAndScale;
+        animation-timing-function: cubic-bezier(.71, .55, .62, 1.57);
+    }
+    
+    .row-margin {
+        margin-top: -8px;
+    }
+    
+    .tooltip1 {
+        position: absolute;
+        text-align: center;
+        padding: 8px;
+        border: none;
+        border-radius: 8px;
+        background: rgb(0, 0, 0, .5);
+        color: white;
+        pointer-events: none;
+    }
+    
+    .title {
+        font-size: 15px;
+        color: rgba(0, 0, 0, 0.6);
+        text-align: left;
+        padding-left: 15px;
+    }
+    
+    .page-title {
+        font-size: 18px;
+        margin: 0 -10px;
+        color: rgba(0, 0, 0, 0.6);
+        text-align: left;
+    }
+    
+    .prospark_users_box .title {
+        padding-left: 0px;
+    }
+    /* Ripple effect */
+    
+    .ripple {
+        background-position: center;
+        transition: background 0.8s;
+    }
+    
+    .ripple:active {
+        background: rgba(0, 0, 0, 0.1) radial-gradient(circle, transparent 1%, rgba(0, 0, 0, 0.1) 1%);
+        background-size: 100%;
+        transition: background 0s;
+    }
+    /* Animation effect */
+    
+    @keyframes fadeAndScale {
+        from {
+            opacity: 0;
+            transform: scale(.9, .9);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1, 1);
+        }
+    }
+    /* Radial Chart css start*/
+    
+    #noData {
+        color: #607d8b !important;
+        opacity: 0.3 !important;
+        font-size: 12px !important;
+    }
+    
+    g .axis line,
+    .axis circle {
+        stroke: #cccccc;
+        stroke-width: 1px
+    }
+    
+    .axis circle {
+        fill: none;
+    }
+    
+    .r.axis text {
+        text-anchor: end
+    }
+    /* Radial Chart css end*/
+    
+    .axis text {
+        font: 10px sans-serif;
+    }
+    
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+    }
+    
+    .lineChart--gradientBackgroundArea--top {
+        stop-color: #6bb7c7;
+        stop-opacity: 0.1;
+    }
+    
+    .lineChart--gradientBackgroundArea--bottom {
+        stop-color: #6bb7c7;
+        stop-opacity: 0.6;
+    }
+    
+    .line {
+        fill: none;
+        opacity: 0.8;
+        stroke-width: 1;
+        /* stroke-dasharray: 10, 4; animation: flow 0.3s linear infinite; -webkit-animation: flow 0.3s linear infinite;*/
+    }
+    
+    .myline {
+        stroke: #636363;
+        stroke-width: 0.5;
+    }
+    
+    @keyframes flow {
+        from {
+            stroke-dashoffset: 14;
+        }
+        to {
+            stroke-dashoffset: 0;
+        }
+    }
+    
+    @-webkit-keyframes flow {
+        from {
+            stroke-dashoffset: 14;
+        }
+        to {
+            stroke-dashoffset: 0;
+        }
+    }
+    
+    rect.bordered {
+        stroke: #E6E6E6;
+        stroke-width: 2px;
+    }
+    
+    text.mono {
+        font-size: 9pt;
+        fill: #aaa;
+    }
+    
+    #users_loading {
+        width: 90px;
+        height: 90px;
+        left: 45%;
+        top: 45%;
+        position: absolute;
+    }
+    
+    footer {
+        text-align: center;
+    }
+    
+    footer p {
+        font-weight: bold;
+        color: #818181;
+    }
+    
+    .downloadData {
+        padding: 2px 6px !important;
+        font-size: 12px;
+    }
+    
+    label {
+        font-family: sans-serif;
+        font-size: 14px;
+        position: absolute;
+        left: 92px;
+        top: 26px;
+    }
+    
+    .axis line {
+        stroke: #ccc;
+    }
+    
+    .hover-active rect {
+        opacity: .35;
+    }
+    
+    .hover-active rect.hover {
+        opacity: 1;
+    }
+    
+    .prospark_users_box .axis .domain {
+        display: none;
+    }
+</style>
+<div class="col-md-12" style="padding:0px;">
+    <div class="prospark_users_box box">
+        <div class="row filters_box">
+            <div class="col"></div>
+        </div><img id="users_loading" class="loading_symbol" src="https://mk0supsystic186fa3rj.kinstacdn.com/wp-content/uploads/2018/09/upload-file-feature-contact-form.gif"></img>
+        <svg id="uniqeidtype"></svg> </div>
+</div>
+<script type="text/javascript" src="data3.js"></script>
+<script type="text/javascript" src="https://d3js.org/d3.v5.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        var first_resize = true;
+
+        function setHeight() {
+            var windowHeight;
+            if ($('.showing-charts').height()) {
+                windowHeight = $('.showing-charts').height();
+            } else {
+                windowHeight = $(window).innerHeight();
+            };
+            if ($(".eye-icon").height() && $(".footer_logo").parent().height()) {
+                var boxHeight = 100 * (windowHeight) / 100 - 10 - $(".eye-icon").height() - $(".footer_logo").parent().height();
+            } else if (!$(".eye-icon").height() && $(".footer_logo").parent().height()) {
+                var boxHeight = 100 * (windowHeight) / 100 - 10 - $(".footer_logo").parent().height();
+            } else if ($(".eye-icon").height() && !$(".footer_logo").parent().height()) {
+                var boxHeight = 100 * (windowHeight) / 100 - 10 - $(".eye-icon").height();
+            } else {
+                var boxHeight = 100 * (windowHeight) / 100 - 10;
+            };
+            $('.prospark_users_box').css('height', boxHeight);
+            if (first_resize) {
+                setTimeout(function() {
+                    first_resize = false;
+                }, 1000);
+            }
+        };
+        setHeight();
+        $(window).resize(function() {
+            setHeight();
+        });
+        elem = $(".prospark_users_box")[0];
+        let resizeObserver = new ResizeObserver(() => {
+            var changedWidth = $(elem).width();
+            var changedHeight = $(elem).height();
+            noOfLoads = 2;
+            if (changedWidth > 0 && changedHeight > 0) {
+                if (!first_resize) {
+                    prospark_users_graph(selectedUsersData);
+                }
+            }
+            noOfLoads = 1;
+        });
+        resizeObserver.observe(elem);
+    });
+</script>
+<script>
+    var parseUTCDate = d3.timeParse("%H:%M:%S");
+    var formatDate2 = d3.timeFormat('%H:%M:%S');
+    var removeByAttr = function(arr, attr, value) {
+        var i = arr.length;
+        while (i--) {
+            if (arr[i] && arr[i].hasOwnProperty(attr) && (arguments.length > 2 && arr[i][attr] === value)) {
+                arr.splice(i, 1);
+            }
+        }
+        return arr;
+    };
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var full_months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    var weekdays2 = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    var months2 = ['All Months', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var selectedUsersData;
+    var showing_heatmap = false;
+    var parseDate11 = d3.timeParse("%Y-%m-%dT%H:%M:%S");
+    var formatDate11 = d3.timeFormat("%d-%b-%Y");
+    // inintCall(JSON.parse('<%- JSON.stringify(data) %>'));
+
+    inintCall(devuserdata)
+
+
+    function inintCall(datam) {
+        console.log(datam)
+
+        d3.selectAll('.tooltip').style('display', 'none').style('opacity', '0');
+        var users_count_data = [];
+        var all_fields = [];
+        if (datam.length > 0) {
+            datam.forEach(function(d) {
+                var obj = {};
+                obj.actionname = d.insights[0].actionname;
+                obj.actioncount = d.insights[0].actioncount;
+                obj.contextname = d.insights[0].contextname;
+                obj.actor = d.insights[0].actor;
+                obj['actiongroupid'] = d.insights[0].actiongroupid;
+                obj.sessionid = d.insights[0].sessionid;
+                obj.recordtimestamp = d.insights[0].recordtimestamp.split('.')[0];
+                d.insights.forEach(function(v) {
+                    if (v.fieldname == "course:Course Name") {
+                        v.fieldname = "Course:Name";
+                    }
+                    if (v.fieldname == "Course Name") {
+                        v.fieldname = "Course:Name";
+                    }
+                    obj[v.fieldname.toLowerCase()] = v.fieldvalue;
+                    if (all_fields.indexOf(v.fieldname) == -1) {
+                        all_fields.push(v.fieldname);
+                    }
+                });
+                users_count_data.push(obj);
+            });
+        }
+        setTimeout(function() {
+            prospark_users_graph(users_count_data);
+        }, 1000);
+        // setTimeout(function() {
+        //     var firstSubscription = true;
+        //     FiltersChanged.subscribe(function(value) {
+        //         if (firstSubscription == false) {
+        //             if (Filters.current[Filters.current.length - 1].key != 'actionname') {
+        //                 var graph_filters = [];
+        //                 Filters.current.forEach(function(v) {
+        //                     if (v.key != 'actionname') {
+        //                         graph_filters.push(v);
+        //                     }
+        //                 });
+        //                 listen.update(graph_filters, users_count_data, prospark_users_graph, true);
+        //             }
+        //         }
+        //     });
+        //     firstSubscription = false;
+        // }, 10000);
+    };
+    var noOfLoads = 1,
+        update;
+    var tooltip = d3.select("body").append("div").attr("class", "tooltip tooltip1").style('display', 'none').style("opacity", 0);
+
+    function prospark_users_graph(prospark_users_data) {
+        selectedUsersData = prospark_users_data;
+        console.log(selectedUsersData)
+        if (prospark_users_data.length > 0) {
+            var users_nest_data = d3.nest().key(function(d) {
+                return d['course:name'];
+            }).key(function(d) {
+                return 'course_bar';
+            }).key(function(d) {
+                return d['contextname'];
+            }).key(function(d) {
+                return d['actionname'];
+            }).rollup(function(d) {
+                let names_count = d3.nest().key(function(v) {
+                    return v['actiongroupid'];
+                }).entries(d);
+                let nest_users = d3.nest().key(function(v) {
+                    return v.actor;
+                }).entries(d);
+                let nest_sessions = d3.nest().key(function(v) {
+                    return v.sessionid;
+                }).entries(d);
+                var obj = {};
+                obj.actioncount = names_count.length;
+                obj.users = nest_users.length;
+                obj.sessions = nest_sessions.length;
+                return obj;
+            }).entries(prospark_users_data);
+            removeByAttr(users_nest_data, 'key', 'undefined');
+            var all_contexts = [];
+            var orderedContexts = [];
+            if (users_nest_data.length > 0) {
+                users_nest_data.forEach(function(d) {
+                    d.year = d.key;
+                    d.children = d.values;
+                    d.children.forEach(function(v) {
+                        v.type = v.key;
+                        v.children = v.values;
+                        v.course = d.key;
+                        v.children.forEach(function(t) {
+                            t.continent = t.key;
+                            t.course = d.key;
+                            if (orderedContexts.indexOf(t.key) == -1) {
+                                orderedContexts.push(t.key);
+                            }
+                            all_contexts.push(t.continent);
+                            t.children = t.values;
+                            t.children.forEach(function(o) {
+                                o.country = o.key;
+                                o.adj_value = o.value.actioncount;
+                                o.users = o.value.users;
+                                o.sessions = o.value.sessions;
+                                o.course = d.key;
+                                o.value = o.value.actioncount;
+                                delete o.key;
+                            });
+                            delete t.key;
+                            delete t.values;
+                        });
+                        delete v.key;
+                        delete v.values;
+                    });
+                    delete d.key;
+                    delete d.values;
+                });
+                var contentData = {
+                    "children": users_nest_data
+                };
+                console.log('content data', contentData);
+                d3.select('#uniqeidtype').html('');
+                $('#users_loading').hide();
+                if ($('.export-icons-start').css('display') == 'none') {
+                    var optwidth = parseInt($("#uniqeidtype").parent().width());
+                } else {
+                    var optwidth = parseInt($("#uniqeidtype").parent().width());
+                }
+                var margin = {
+                        top: 15,
+                        right: 15,
+                        bottom: 110,
+                        left: 60
+                    },
+                    width = optwidth - margin.left - margin.right,
+                    height = $('#uniqeidtype').parent().height() - $('.filters_box').height() - margin.top - margin.bottom;
+                var color = d3.scaleOrdinal(d3.schemeCategory10).domain(all_contexts);
+                var dollarFormat = d3.format(',');
+                var tickFormat = function(n) {
+                    return n === 0 ? '0' : n < 1000000 ? dollarFormat(n / 1000) + ' ' : dollarFormat(n / 1000000) + ' K'
+                };
+                var options = {
+                    key: 'adj_value',
+                    country: null,
+                    continent: null
+                };
+                var data = contentData;
+                data.children.forEach(function(d, i) {
+                    removeByAttr(d.children, 'type', 'Exports');
+                    d.children.forEach(function(v) {
+                        v.type = 'Courses';
+                        v.children.forEach(function(t, j) {});
+                    });
+                });
+                var root = d3.hierarchy(data).sum(function(d) {
+                    return d[options.key]
+                });
+                var yearData = root.children;
+                yearData.sort(function(a, b) {
+                    return a.data.year - b.data.year
+                });
+                var svg = d3.select('#uniqeidtype').attr('width', width + margin.left + margin.right).attr('height', height + margin.top + margin.bottom).append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+                var x0 = d3.scaleBand().domain(yearData.map(function(d) {
+                    return d.data.year
+                }).sort()).range([0, width]).padding(0.15);
+                var x1 = d3.scaleBand().domain(['Courses']).rangeRound([0, x0.bandwidth()]).paddingInner(0.1);
+                var y = d3.scaleLinear().domain([0, d3.max(yearData, function(d) {
+                    return d3.max(d.children, function(e) {
+                        return e.value
+                    })
+                })]).nice().range([0, height]);
+                var x0Axis = d3.axisBottom().scale(x0).tickSize(0).tickFormat(function(d) {
+                    if (d.length > 30) {
+                        d = d.slice(0, 30) + '...';
+                    }
+                    return d;
+                });
+                var x1Axis = d3.axisBottom().scale(x1).tickFormat(function(d) {
+                    return '';
+                });
+                var yAxis = d3.axisLeft().tickSize(-width).scale(y.copy().range([height, 0]));
+                var axisX = svg.append('g').attr('class', 'x0 axis').attr('transform', 'translate(0,' + (height + 22) + ')').call(x0Axis);
+                axisX.append("text").attr("y", 65).attr("dx", (width) / 2).attr("transform", "rotate(0)").style("text-anchor", "middle").style("fill", "rgb(0, 0, 0 )").style("font-size", "12px").text('Courses');
+                axisX.selectAll(".tick text").call(wrap, x0.bandwidth());
+                var gy = svg.append('g').attr('class', 'y axis').call(yAxis);
+                gy.append("text").attr("transform", "rotate(-90)").attr("x", -height / 2).attr("dy", "-3.5em").style("text-anchor", "middle").style("fill", "rgb(0, 0, 0 )").style("font-size", "12px").style("font-weight", "bold").text('No. of Actions');
+                var years = svg.selectAll('.year').data(yearData, function(d) {
+                    return d.data.year
+                }).enter().append('g').attr('class', 'year').attr('transform', function(d) {
+                    return 'translate(' + x0(d.data.year) + ',0)'
+                });
+                var axisX1 = years.append('g').attr('class', 'x1 axis').attr('transform', 'translate(0,' + height + ')').call(x1Axis);
+                update();
+
+                function sum(d) {
+                    return !options.country || options.country === d.country ? d[options.key] : 0
+                }
+
+                function update() {
+                    root.sum(sum);
+                    var t = d3.transition();
+                    var typeData = d3.merge(yearData.map(function(d) {
+                        return d.children
+                    }));
+                    y.domain([0, d3.max(typeData.map(function(d) {
+                        return d.value
+                    }))]).nice();
+                    yAxis.scale(y.copy().range([height, 0]));
+                    gy.transition(t).call(yAxis);
+                    var types = years.selectAll('.type').data(function(d) {
+                        return d.children
+                    }, function(d) {
+                        return d.data.type
+                    }).each(function(d) {
+                        d.treemapRoot.sum(sum);
+                        d.treemapRoot.children.forEach(function(d) {
+                            d.sort(function(a, b) {
+                                return b.value - a.value
+                            })
+                        });
+                    });
+                    types = types.enter().append('g').attr('class', 'type').attr('transform', function(d) {
+                        return 'translate(' + x1(d.data.type) + ',' + height + ')'
+                    }).each(function(d) {
+                        d.children.sort(function(a, b) {
+                            return orderedContexts.indexOf(b.data.continent) - orderedContexts.indexOf(a.data.continent)
+                        });
+                        d.children.forEach(function(d) {
+                            d.sort(function(a, b) {
+                                return b.value - a.value
+                            })
+                        });
+                        d.treemap = d3.treemap().tile(d3.treemapResquarify);
+                        d.treemapRoot = d.copy();
+                    }).merge(types).each(function(d) {
+                        d.treemap.size([x1.bandwidth(), y(d.value)])(d.treemapRoot)
+                    });
+                    root.each(function(d) {
+                        d.index = d.parent ? d.parent.children.indexOf(d) : 0
+                    });
+                    types.transition(t).delay(function(d, i) {
+                        if (noOfLoads != 1) {
+                            return 0;
+                        } else {
+                            return d.parent.index * 150 + i * 50;
+                        }
+                    }).attr('transform', function(d) {
+                        return 'translate(' + x1(d.data.type) + ',' + (height - y(d.value)) + ')'
+                    });
+                    var continents = types.selectAll('.continent').data(function(d) {
+                        return d.treemapRoot.children
+                    }, function(d) {
+                        return d.data.continent
+                    });
+                    continents = continents.enter().append('g').attr('class', 'continent').merge(continents);
+                    var countries = continents.selectAll('.country').data(function(d) {
+                        return d.children
+                    }, function(d) {
+                        return d.data.country
+                    });
+                    var enterCountries = countries.enter().append('rect').attr('class', 'country').attr('x', function(d) {
+                        return d.value ? d.x0 : x1.bandwidth() / 2
+                    }).attr('width', function(d) {
+                        return d.value ? d.x1 - d.x0 : 0
+                    }).attr('y', 0).attr('height', 0).style('fill', function(d) {
+                        return color(d.parent.data.continent)
+                    }).style('fill-opacity', '0.8').style('stroke', '#fff').style('stroke-width', '0.1px');
+                    countries = countries.merge(enterCountries);
+                    enterCountries.on('mouseover', function(d) {
+                        console.log(d);
+                        svg.classed('hover-active', true);
+                        countries.classed('hover', function(e) {
+                            return e.data.country === d.data.country && e.parent.data.continent === d.parent.data.continent;
+                        }); /*d3.selectAll('.country').style('fill-opacity',0.4); d3.select(this).style('fill-opacity',0.9);*/
+                        tooltip.style('display', 'block').style('opacity', 1);
+                    }).on('mouseout', function() {
+                        svg.classed('hover-active', false);
+                        countries.classed('hover', false);
+                        tooltip.style('display', 'none').style('opacity', 0);
+                    }).on('mousemove', function(d, i) {
+                        let Action_name;
+                        if (d.data.country == 'undefined') {
+                            Action_name = "N/A";
+                        } else {
+                            Action_name = d.data.country
+                        }
+                        var left = event.pageX + 10;
+                        var top = event.pageY + 20;
+                        if ((left) > (width - 150)) {
+                            left = left - 200;
+                        }
+                        tooltip.html("<strong>Course: </strong>" + d.data.course + "</br><strong>Context: </strong>" + d.parent.data.continent + "</br>" + "<strong>Action: </strong>" + (Action_name) + "</br>" + "<strong>No. of Actions: </strong>" + d.value + "</br>" + "<strong>No. of Users: </strong>" + d.data.users + "</br>" + "<strong>No. of Sessions: </strong>" + d.data.sessions).style("left", left + "px").style("top", top + "px");
+                    }).on('click', function(d) {
+                        event.stopPropagation();
+                        if (d.data.country != 'undefined') {
+                            options.country = options.country === d.data.country ? null : d.data.country;
+                            options.continent = options.continent === d.parent.data.continent ? null : d.parent.data.continent;
+                            update();
+                        }
+                    });
+                    countries.filter(function(d) {
+                        return d.data.country === options.country && d.parent.data.continent === options.continent;
+                    }).each(function(d) {
+                        d3.select(this.parentNode).raise()
+                    }).raise();
+                    countries.transition(t).attr('x', function(d) {
+                        return d.value ? d.x0 : x1.bandwidth() / 2
+                    }).attr('width', function(d) {
+                        return d.value ? d.x1 - d.x0 : 0
+                    }).attr('y', function(d) {
+                        return d.value ? d.y0 : d.parent.parent.y1 / 2
+                    }).attr('height', function(d) {
+                        return d.value ? d.y1 - d.y0 : 0
+                    });
+                }
+
+                function wrap(text, width) {
+                    text.each(function() {
+                        var text = d3.select(this),
+                            words = text.text().split(/\s+/).reverse(),
+                            word, line = [],
+                            lineNumber = 0,
+                            lineHeight = 1.1,
+                            y = text.attr("y"),
+                            dy = parseFloat(text.attr("dy")),
+                            tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
+                        while (word = words.pop()) {
+                            line.push(word);
+                            tspan.text(line.join(" "));
+                            if (tspan.node().getComputedTextLength() > width) {
+                                line.pop();
+                                tspan.text(line.join(" "));
+                                line = [word];
+                                tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", `${++lineNumber * lineHeight + dy}em`).text(word);
+                            }
+                        }
+                    })
+                }
+            } else {
+                $('#users_loading').hide();
+                noData_function('uniqeidtype');
+            }
+        } else {
+            $('#users_loading').hide();
+            noData_function('uniqeidtype');
+        }
+    }
+</script>

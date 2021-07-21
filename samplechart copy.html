@@ -1,0 +1,611 @@
+<style>
+    .tooltip1,
+    .axis {
+        font-family: Arial !important;
+    }
+    
+    .prospark_actions_flow_box {
+        background: #fff;
+        padding: 5px 0;
+        border-radius: 0 0 4px 4px;
+        border-top-left-radius: 0px;
+        border-top-right-radius: 0px;
+        border-width: 0 0 3px;
+        border-top-width: 0px;
+        display: block;
+        height: 100%;
+        overflow: hidden;
+        animation-duration: 1s;
+        animation-name: fadeAndScale;
+        animation-timing-function: cubic-bezier(.71, .55, .62, 1.57);
+    }
+    
+    .row-margin {
+        margin-top: -8px;
+    }
+    
+    .tooltip1 {
+        position: absolute;
+        text-align: center;
+        padding: 8px;
+        border: none;
+        border-radius: 8px;
+        background: rgb(0, 0, 0, .5);
+        color: white;
+        pointer-events: none;
+    }
+    
+    .title {
+        font-size: 15px;
+        color: rgba(0, 0, 0, 0.6);
+        text-align: left;
+        padding-left: 15px;
+    }
+    
+    .page-title {
+        font-size: 18px;
+        margin: 0 -10px;
+        color: rgba(0, 0, 0, 0.6);
+        text-align: left;
+    }
+    
+    .prospark_actions_flow_box .title {
+        padding-left: 0px;
+    }
+    /* Ripple effect */
+    
+    .ripple {
+        background-position: center;
+        transition: background 0.8s;
+    }
+    
+    .ripple:active {
+        background: rgba(0, 0, 0, 0.1) radial-gradient(circle, transparent 1%, rgba(0, 0, 0, 0.1) 1%);
+        background-size: 100%;
+        transition: background 0s;
+    }
+    /* Animation effect */
+    
+    @keyframes fadeAndScale {
+        from {
+            opacity: 0;
+            transform: scale(.9, .9);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1, 1);
+        }
+    }
+    /* Radial Chart css start*/
+    
+    #noData {
+        color: #607d8b !important;
+        opacity: 0.3 !important;
+        font-size: 12px !important;
+    }
+    
+    g .axis line,
+    .axis circle {
+        stroke: #cccccc;
+        stroke-width: 1px
+    }
+    
+    .axis circle {
+        fill: none;
+    }
+    
+    .r.axis text {
+        text-anchor: end
+    }
+    /* Radial Chart css end*/
+    
+    .axis text {
+        font-size: 10px;
+    }
+    
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+    }
+    
+    .lineChart--gradientBackgroundArea--top {
+        stop-color: #6bb7c7;
+        stop-opacity: 0.1;
+    }
+    
+    .lineChart--gradientBackgroundArea--bottom {
+        stop-color: #6bb7c7;
+        stop-opacity: 0.6;
+    }
+    
+    .line {
+        fill: none;
+        opacity: 0.8;
+        stroke-width: 1;
+        /* stroke-dasharray: 10, 4; animation: flow 0.3s linear infinite; -webkit-animation: flow 0.3s linear infinite;*/
+    }
+    
+    .myline {
+        stroke: #636363;
+        stroke-width: 0.5;
+    }
+    
+    @keyframes flow {
+        from {
+            stroke-dashoffset: 14;
+        }
+        to {
+            stroke-dashoffset: 0;
+        }
+    }
+    
+    @-webkit-keyframes flow {
+        from {
+            stroke-dashoffset: 14;
+        }
+        to {
+            stroke-dashoffset: 0;
+        }
+    }
+    
+    rect.bordered {
+        stroke: #E6E6E6;
+        stroke-width: 2px;
+    }
+    
+    text.mono {
+        font-size: 9pt;
+        fill: #aaa;
+    }
+    
+    #actions_flow_loading {
+        width: 90px;
+        height: 90px;
+        left: 45%;
+        top: 45%;
+        position: absolute;
+    }
+    
+    footer {
+        text-align: center;
+    }
+    
+    footer p {
+        font-weight: bold;
+        color: #818181;
+    }
+    
+    .downloadData {
+        padding: 2px 6px !important;
+        font-size: 12px;
+    }
+    
+    .axis path {
+        display: none;
+    }
+    
+    .axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+    }
+    
+    .group-label {
+        text-anchor: end;
+        font-size: 11px;
+    }
+    
+    #toggle_options {
+        position: absolute;
+        margin-left: 20px;
+        top: 10px;
+        float: left;
+    }
+    
+    .actionflow_crumbs {
+        height: 60px;
+        display: none;
+    }
+</style>
+<div class="col-md-12" style="padding:0px;">
+    <div class="prospark_actions_flow_box box">
+        <div class="row filters_box">
+            <div class="col actionflow_crumbs"><svg id='actionflow_sequence' style='margin-left:40px;margin-top:10px;'></svg></div>
+        </div><img id="actions_flow_loading" class="loading_symbol" src="https://mk0supsystic186fa3rj.kinstacdn.com/wp-content/uploads/2018/09/upload-file-feature-contact-form.gif"></img> <svg id="uniquetype"></svg></div>
+</div>
+<script type="text/javascript" src="https://d3js.org/d3.v5.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="data2.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        var first_resize = true;
+
+        function setHeight() {
+            var windowHeight;
+            if ($('.showing-charts').height()) {
+                windowHeight = $('.showing-charts').height();
+            } else {
+                windowHeight = $(window).innerHeight();
+            };
+            if ($(".date-filter-div").height() && $(".footer_logo").parent().height()) {
+                var boxHeight = 100 * (windowHeight) / 100 - 10 - $(".date-filter-div").height() - $(".footer_logo").parent().height();
+            } else if (!$(".date-filter-div").height() && $(".footer_logo").parent().height()) {
+                var boxHeight = 100 * (windowHeight) / 100 - 10 - $(".footer_logo").parent().height();
+            } else if ($(".date-filter-div").height() && !$(".footer_logo").parent().height()) {
+                var boxHeight = 100 * (windowHeight) / 100 - 10 - $(".date-filter-div").height();
+            } else {
+                var boxHeight = 100 * (windowHeight) / 100 - 10;
+            };
+            $('.prospark_actions_flow_box').css('height', boxHeight);
+            if (first_resize) {
+                setTimeout(function() {
+                    first_resize = false;
+                }, 1000);
+            }
+        };
+        setHeight();
+        $(window).resize(function() {
+            setHeight();
+        });
+        elem = $(".prospark_actions_flow_box")[0];
+        let resizeObserver = new ResizeObserver(() => {
+            noOfLoads = 2;
+            if (!first_resize) {
+                if (selected_flow_course == "") {
+                    prospark_actions_flow_graph(selectedCoursesFlowData);
+                } else {
+                    actions_flow_barchart(selectedActionsFlowData, selectedBarColor);
+                }
+            }
+            noOfLoads = 1;
+        });
+        resizeObserver.observe(elem);
+    });
+</script>
+<script>
+    var parseUTCDate = d3.timeParse("%H:%M:%S");
+    var formatDate2 = d3.timeFormat('%H:%M:%S');
+    var removeByAttr = function(arr, attr, value) {
+        var i = arr.length;
+        while (i--) {
+            if (arr[i] && arr[i].hasOwnProperty(attr) && (arguments.length > 2 && arr[i][attr] === value)) {
+                arr.splice(i, 1);
+            }
+        }
+        return arr;
+    };
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var full_months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    var weekdays2 = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    var months2 = ['All Months', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var selectedCoursesFlowData, selectedActionsFlowData, selectedBarColor;
+    var showing_heatmap = false;
+    var parseDate11 = d3.timeParse("%Y-%m-%dT%H:%M:%S");
+    var formatDate11 = d3.timeFormat("%d-%b-%Y");
+    var noOfLoads = 1,
+        update;
+    var selected_flow_course = '';
+    var color = d3.scaleOrdinal(d3.schemePaired);
+    // inintCall(JSON.parse('<%- JSON.stringify(data) %>'));
+    inintCall(_data);
+
+    function inintCall(datam) {
+        console.log(datam)
+        d3.selectAll('.tooltip').style('display', 'none').style('opacity', '0');
+        var users_count_data = [];
+        var all_fields = [];
+        if (datam.length > 0) {
+            datam.forEach(function(d) {
+                var obj = {};
+                var obj = {};
+                obj.clientid = d.insights.clientid;
+                obj.clientcode = d.insights.clientcode;
+                obj.contextname = d.insights.contextname;
+                obj.actor = d.insights.actor;
+                obj.outcome = d.insights.outcome;
+                obj.fieldname = d.insights.fieldname;
+                obj.fieldvalue = d.insights.fieldvalue;
+                obj.recordtimestamp = d.insights.recordtimestamp;
+                obj.objectgroupid = d.insights.objectgroupid;
+                obj.courseid = d.insights.courseid;
+                obj.coursename = d.insights.coursename;
+
+                users_count_data.push(obj);
+            });
+        }
+        setTimeout(function() {
+            prospark_actions_flow_graph(users_count_data);
+        }, 1000);
+        setTimeout(function() {
+            var firstSubscription = true;
+            FiltersChanged.subscribe(function(value) {
+                if (firstSubscription == false) {
+                    if (Filters.current[Filters.current.length - 1].key != 'actionname') {
+                        var graph_filters = [];
+                        Filters.current.forEach(function(v) {
+                            if (v.key != 'actionname') {
+                                graph_filters.push(v);
+                            }
+                        });
+                        listen.update(graph_filters, users_count_data, prospark_actions_flow_graph, true);
+                    }
+                }
+            });
+            firstSubscription = false;
+        }, 10000);
+    };
+    var tooltip = d3.select("body").append("div").attr("class", "tooltip tooltip1").style('display', 'none').style("opacity", 0);
+
+    function prospark_actions_flow_graph(prospark_courses_data) {
+        selectedCoursesFlowData = prospark_courses_data;
+        if (prospark_courses_data.length > 0) {
+            d3.select('#uniquetype').html('');
+            $('#actions_flow_loading').hide();
+            var all_actions = [];
+            var actionsList = ['Start Course', 'Finish Course Item', 'Submit Response', 'Assessment Result', 'Course Completion'];
+            var nest_courses = d3.nest().key(function(d) {
+                return d['course:name'];
+            }).rollup(function(d) {
+                let nest_actions = d3.nest().key(function(v) {
+                    return v.actionname;
+                }).rollup(function(v) {
+                    let nest_users = d3.nest().key(function(e) {
+                        return e.actor;
+                    }).entries(v);
+                    return nest_users.length;
+                }).entries(d);
+                return nest_actions;
+            }).entries(prospark_courses_data);
+            nest_courses = nest_courses.filter(function(d) {
+                return d.key != 'undefined';
+            });
+            if (nest_courses.length > 0) {
+                nest_courses.forEach(function(d) {
+                    d.values = d.value;
+                    d.value = d3.sum(d.values, function(v) {
+                        return v.value;
+                    });
+                });
+                console.log(nest_courses);
+                $('#toggle_options').show();
+                if ($('.export-icons-start').css('display') == 'none') {
+                    var optwidth = parseInt($("#uniquetype").parent().width());
+                } else {
+                    var optwidth = parseInt($("#uniquetype").parent().width());
+                };
+                var margin = {
+                        top: 10,
+                        right: 10,
+                        bottom: 10,
+                        left: 10
+                    },
+                    width = optwidth - margin.left - margin.right,
+                    height = $('#uniquetype').parent().height() - $('.filters_box').height() - margin.top - margin.bottom;
+                var svg = d3.select("#uniquetype").attr("width", width).attr("height", height),
+                    radius = Math.min(width, height) / 2.3,
+                    g = svg.append("g").attr("transform", "translate(" + width / 1.8 + "," + height / 2 + ")");
+                var pie = d3.pie().sort(null).value(function(d) {
+                    return d.value;
+                });
+                var path = d3.arc().outerRadius(radius - 10).innerRadius(0);
+                var label = d3.arc().outerRadius(radius - 40).innerRadius(radius - 40);
+                var arc = g.selectAll(".arc").data(pie(nest_courses)).enter().append("g").attr("class", "arc");
+                var slices = arc.append("path").attr("d", path).attr("fill", function(d) {
+                    return color(d.data.key);
+                }).on('mouseover', function(d) {
+                    tooltip.style('display', 'block').style('opacity', 1);
+                }).on('mouseout', function() {
+                    tooltip.style('display', 'none').style('opacity', 0);
+                }).on('mousemove', function(d, i) {
+                    var left = event.pageX + 10;
+                    var top = event.pageY - 50;
+                    var content = "<strong>Course: </strong>" + d.data.key + "</br>" + "<strong>No. of Actions: </strong>" + d3.format('.0f')(d.data.value);
+                    tooltip.html(content).style("left", left + "px").style("top", top + "px");
+                }).on('click', function(d) {
+                    selected_flow_course = d.data.key;
+                    tooltip.style('display', 'none').style('opacity', 0);
+                    actions_flow_barchart(d.data.values, color(d.data.key));
+                    $('.actionflow_crumbs').show();
+                    var crumbs = [{
+                        category: 'Client',
+                        name: 'Client'
+                    }, {
+                        category: d.data.key,
+                        name: d.data.key
+                    }];
+                    updateActionFlowCrumbs(crumbs);
+                }).transition().duration(function(d) {
+                    if (noOfLoads == 1) {
+                        return 750;
+                    } else {
+                        return 0;
+                    }
+                }).attrTween('d', donutTween);
+
+                function attrTween(d) {
+                    var i = d3.interpolate(d.startAngle + 0.1, d.endAngle);
+                    return function(t) {
+                        d.endAngle = i(t);
+                        return path(d);
+                    }
+                }
+
+                function donutTween(b) {
+                    b.innerRadius = 0;
+                    var i = d3.interpolate({
+                        startAngle: 0,
+                        endAngle: 0
+                    }, b);
+                    return function(t) {
+                        return path(i(t));
+                    };
+                }
+                drawLegends(nest_courses);
+
+                function drawLegends(rootData) {
+                    var legendHeight = 12,
+                        interLegend = 6,
+                        colorWidth = legendHeight * 2,
+                        legendsMinY = height - 20;
+                    var legendContainer = svg.append("g").classed("legend", true).attr("transform", "translate(" + [5, legendsMinY] + ")");
+                    var legends = legendContainer.selectAll(".legend").data(rootData).enter();
+                    var legend = legends.append("g").classed("legend", true).attr("transform", function(d, i) {
+                        return "translate(" + [0, -i * (legendHeight + interLegend)] + ")";
+                    });
+                    legend.append("rect").classed("legend-color", true).attr("y", -legendHeight).attr("width", colorWidth).attr("height", legendHeight).style("fill", function(d) {
+                        return color(d.key);
+                    });
+                    legend.append("text").classed("tiny", true).attr("transform", "translate(" + [colorWidth + 5, -1] + ")").text(function(d) {
+                        return d.key;
+                    });
+                    legendContainer.append("text").attr("transform", "translate(" + [0, -rootData.length * (legendHeight + interLegend) - 5] + ")").text("Courses");
+                }; /* arc.append("text") .attr("transform", function(d){return "translate(" + label.centroid(d) + ")";}) .attr("dy", "0.35em") .text(function(d){return d.data.key;});*/
+            } else {
+                $('#toggle_options').hide();
+                $('#actions_flow_loading').hide();
+                noData_function('uniquetype');
+            }
+        } else {
+            $('#toggle_options').hide();
+            $('#actions_flow_loading').hide();
+            noData_function('uniquetype');
+        }
+    }
+
+    function actions_flow_barchart(actionsData, barcolor) {
+        selectedActionsFlowData = actionsData;
+        selectedBarColor = barcolor;
+        d3.select("#uniquetype").html("");
+        var labelX = 'Actions';
+        labelY = "No. of Users";
+        if ($('.export-icons-start').css('display') == 'none') {
+            var optwidth = parseInt($("#uniquetype").parent().width());
+        } else {
+            var optwidth = parseInt($("#uniquetype").parent().width());
+        };
+        var margin = {
+                top: 20,
+                right: 20,
+                bottom: 120,
+                left: 60
+            },
+            width = optwidth - margin.left - margin.right,
+            height = $('#uniquetype').parent().height() - $('.filters_box').height() - margin.top - margin.bottom;
+        var x = d3.scaleBand().range([0, width]).padding(0.1);
+        var y = d3.scaleLinear().range([height, 0]);
+        var svg = d3.select("#uniquetype").attr("width", width + margin.left + margin.right).attr("height", height + margin.top + margin.bottom).append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        x.domain(actionsData.map(function(d) {
+            return d.key;
+        }));
+        y.domain([0, d3.max(actionsData, function(d) {
+            return d.value;
+        })]);
+        var bars = svg.selectAll(".bar").data(actionsData).enter().append("rect").attr("class", "bar").attr("x", function(d) {
+            return x(d.key);
+        }).attr("width", x.bandwidth()).attr("y", function(d) {
+            return y(0);
+        }).attr("height", function(d) {
+            return height - y(0);
+        }).style('fill', barcolor).on('mouseover', function(d) {
+            tooltip.style('display', 'block').style('opacity', 1);
+        }).on('mouseout', function() {
+            tooltip.style('display', 'none').style('opacity', 0);
+        }).on('mousemove', function(d, i) {
+            var left = event.pageX + 10;
+            var top = event.pageY - 50;
+            var content = "<strong>Action: </strong>" + d.key + "</br>" + "<strong>No. of Users: </strong>" + d3.format('.0f')(d.value);
+            tooltip.html(content).style("left", left + "px").style("top", top + "px");
+        });
+        bars.transition().ease(d3.easeLinear).duration(function(d) {
+            if (noOfLoads == 1) {
+                return 200;
+            } else {
+                return 0;
+            }
+        }).delay(function(d, i) {
+            if (noOfLoads == 1) {
+                return i * 100;
+            } else {
+                return 0;
+            }
+        }).attr("y", function(d) {
+            return y(d.value);
+        }).attr("height", function(d) {
+            return height - y(d.value);
+        });
+        var axisX = svg.append("g").attr("transform", "translate(0," + height + ")").call(d3.axisBottom(x));
+        axisX.append("text").attr("y", 40).attr("dx", (width / 2) + 20).attr("transform", "rotate(0)").style("text-anchor", "middle").style("fill", "black").style("font-size", "12px").style("font-weight", "bold").text(labelX);
+        var axisY = svg.append("g").call(d3.axisLeft(y));
+        axisY.append("text").attr("transform", "rotate(-90)").attr("x", -height / 2).attr("dy", "-3.5em").style("text-anchor", "middle").style("fill", "black").style("font-size", "12px").style("font-weight", "bold").text(labelY);
+    }
+    var actionflow_gantt_b = {
+        w: 160,
+        h: 20,
+        s: 3,
+        t: 10
+    };
+
+    function actionflow_breadCrumbPoints(d, i) {
+        var points2 = [];
+        points2.push("0,0");
+        points2.push(actionflow_gantt_b.w + ",0");
+        points2.push(actionflow_gantt_b.w + actionflow_gantt_b.t + "," + (actionflow_gantt_b.h / 2));
+        points2.push(actionflow_gantt_b.w + "," + actionflow_gantt_b.h);
+        points2.push("0," + actionflow_gantt_b.h);
+        if (i > 0) {
+            points2.push(actionflow_gantt_b.t + "," + (actionflow_gantt_b.h / 2));
+        }
+        return points2.join(" ");
+    }
+
+    function updateActionFlowCrumbs(nodeArray) {
+        console.log(nodeArray);
+        var trail = d3.select("#actionflow_sequence").attr("width", 320).attr("height", 30).style('margin-top', '5px');
+        trail.append("svg:text").attr("id", "endlabel").style("fill", "#000");
+        d3.select("#actionflow_sequence").style("visibility", "");
+        var g = d3.select("#actionflow_sequence").selectAll("g").data(nodeArray, function(d) {
+            return d.name;
+        });
+        g.exit().remove();
+        var entering = g.enter().append("svg:g");
+        entering.append("svg:polygon").attr("points", actionflow_breadCrumbPoints).on('mouseover', function(d) {
+            tooltip.style('display', 'block').style('opacity', 1);
+        }).on('mouseout', function(d) {
+            tooltip.style('display', 'none').style('opacity', 0);
+        }).on('mousemove', function(d) {
+            var left = event.pageX + 10;
+            var top = event.pageY + 20;
+            if (d.name == 'Client') {
+                tooltip.html("<strong>Click here to go back to Clients</strong>").style("left", left + "px").style("top", top + "px");
+            } else {
+                tooltip.html("<strong></strong>" + d.name).style("left", left + "px").style("top", top + "px");
+            }
+        }).on('click', function(d) {
+            event.stopPropagation();
+            tooltip.style('display', 'none').style('opacity', 0);
+            if (d.name == 'Client') {
+                $('.actionflow_crumbs').hide();
+                selected_flow_course = "";
+                prospark_actions_flow_graph(selectedCoursesFlowData);
+            } else if (d.name == selected_client) { /*metric_selected=false;selected_metric='';scorecard_barchart(selectedBarchartData);var crumbs=[{category:'Client',name:'Client'},{category:selected_client,name:selected_client}];updateScoresCrumbs(crumbs);*/ }
+        }).style("fill", function(d) {
+            if (d.name == 'Client') {
+                return '#898989';
+            } else {
+                return color(d.name);
+            }
+        }).style('cursor', 'pointer');
+        entering.append("svg:text").attr("x", (actionflow_gantt_b.w + actionflow_gantt_b.t) / 2).attr("y", actionflow_gantt_b.h / 2).attr("dy", "0.35em").attr("text-anchor", "middle").text(function(d) {
+            if (d.name.length > 25) {
+                return d.name.slice(0, 25) + '...';
+            } else {
+                return d.name;
+            }
+        }).style('pointer-events', 'none').style("fill", '#fff').style('font-size', '12px');
+        entering.merge(g).attr("transform", function(d, i) {
+            return "translate(" + i * (actionflow_gantt_b.w + actionflow_gantt_b.s) + ", 0)";
+        });
+    };
+</script>
